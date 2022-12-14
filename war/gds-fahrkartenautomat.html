@@ -1,0 +1,269 @@
+<html>
+<head>
+    <meta name="viewport" content="width=820">
+    <meta charset="utf-8">
+    <title>GDS Fahrkartenautomat</title>
+    <link rel="SHORTCUT ICON" href="favicon.ico">
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        .coin {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 30px;
+            font-weight: bold;
+            aspect-ratio: 1;
+            border-color: black;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 50%;
+            background: #FF9;
+            width: 60px
+        }
+        .coin span {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        button:hover {
+            background: #FFD;
+        }
+        button:active {
+            background-color: #FF4;
+        }
+        td {
+            vertical-align: top;
+        }
+        .clipbox {
+            position: absolute;
+            overflow: hidden;
+        }
+        #coinbox {
+            /* background-color: #FF9; */
+            top: 68%;
+            left: 12%;
+            width: 400px;
+            height: 400px;
+        }
+        #ticketbox {
+            /* background-color: #FF9; */
+            top: 88%;
+            left: 40%;
+            width: 200px;
+            height: 300px;
+        }
+        .ejecting {
+            position: absolute;
+            top: 0px;
+            left: -60px;
+            transition: 0.3s 0s All linear;
+        }
+        .falling {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            transition: 0.5s 0s All;
+            transition-timing-function: cubic-bezier(0.29, 0, 0.84, 0.18);
+        }
+        .price {
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            text-align: center;
+            top: 0;
+            font-size: 40px;
+        }
+        .info {
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            text-align: center;
+            top: 35%;
+            font-size: 25px;
+        }
+        .ticket {
+            background-color: #FBB;
+            border: 1px solid black;
+            font-size: 3px;
+            width: 40px;
+            height: 60px;
+            text-align: center;
+            line-height: 5px;
+            padding: 2px;
+        }
+        .ticket.ejecting {
+            left: 30%;
+            top:-60px;
+        }
+    </style>
+</head>
+<body>
+<hr>
+<h1>GDS Fahrkartenautomat</h1>
+<table>
+    <tr>
+        <td>
+            <iframe id="circuitFrame" width=800 height=550 src="circuitjs.html?hideSidebar=true&hideInfoBox=true&whiteBackground=true&positiveColor=%2300dd00&selectColor=%230000ff&euroResistors=true&IECGates=true&startCircuit=gds-fahrkartenautomat.txt"></iframe>
+        </td>
+        <td style="text-align: center;">
+            <p><button class="coin" onclick="pulse('x1')">1€</button></p>
+            <p><button class="coin" onclick="pulse('x1', 'x2')">2€</button></p>
+            <p><button onclick="sim.setSimRunning(true)">Start</button></p>
+            <p><button onclick="sim.setSimRunning(false)">Stop</button></p>
+        </td>
+        <td>
+            <div style="display:inline-block; position: relative;">
+                <img src="circuitjs1/img/gds-fahrkartenautomat.png">
+                <p class="price">Preis<br>3€</p>
+                <div class="info">
+                    <p>Eingang: <span id="inputbits"></span></p>
+                    <p>Zustand: <span id="statebits"></span></p>
+                    <p>Ausgang: <span id="outputbits"></span></p>
+                </div>
+                <div class="clipbox" id="ticketbox"></div>
+                <div class="clipbox" id="coinbox"></div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<p>
+    This page is based on the <a href="http://www.falstad.com/circuit/">circuitjs simulator</a>
+    by Paul Falstad, Iain Sharp and others.
+    Source Code: <a href="https://github.com/fritzw/circuitjs1">https://github.com/fritzw/circuitjs1</a>
+</p>
+
+<script>
+
+function spawnCoin() {
+    let div = document.createElement("div");
+    div.className = "coin ejecting";
+    let text = document.createTextNode("1€");
+    div.appendChild(text);
+    let container = document.getElementById("coinbox");
+    container.appendChild(div);
+    let rndX = Math.round(Math.random() * 60);
+    let rndY = Math.round(Math.random() * 10);
+    setTimeout(() => div.style.left = '0px', 100);
+    setTimeout(() => div.classList.add("falling"), 400);
+    setTimeout(() => div.style.top = (rndY+180) + 'px', 400);
+    setTimeout(() => div.style.left = rndX+'px', 400);
+}
+
+function spawnTicket() {
+    let div = document.createElement("div");
+    div.className = "ticket ejecting";
+    let text = document.createTextNode("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor");
+    div.appendChild(text);
+    let container = document.getElementById("ticketbox");
+    container.appendChild(div);
+    let rndX = Math.round(Math.random() * 100);
+    let rndY = Math.round(Math.random() * 10);
+    setTimeout(() => div.style.top = '0px', 100);
+    setTimeout(() => div.classList.add("falling"), 400);
+    setTimeout(() => div.style.top = (rndY+80) + 'px', 400);
+    setTimeout(() => div.style.left = rndX+'px', 400);
+}
+
+
+// get iframe the simulator is running in.  Must have same origin as this file!
+var iframe = document.getElementById("circuitFrame");
+
+var sim;
+var elmList = [];
+var HIGH = 5;
+var LOW = 0;
+var THRESHOLD = (LOW + HIGH) / 2;
+var prevClock = HIGH;
+let pulsedSignals = [];
+let state = '00';
+let outputs = '00';
+
+function round(x) {
+  return Math.round(x*1000)/1000;
+}
+
+// called when simulator updates its display
+function didUpdate(sim) {
+    inputs = getBit('x1') + getBit('x2');
+    state = getBit('y1') + getBit('y0');
+    outputs = getBit('z1') + getBit('z2');
+    document.getElementById('inputbits').innerHTML = inputs;
+    document.getElementById('statebits').innerHTML = state;
+    document.getElementById('outputbits').innerHTML = outputs;
+}
+
+// called when simulator analyzes a circuit (when a circuit is loaded or edited)
+function didAnalyze(sim) {
+  console.log("analyzed circuit");
+
+  // get the list of elements
+  elmList = sim.getElements();
+
+  // log some info about each one
+  for (const elm of elmList) {
+    console.log("elm " + elm.getType() + ", " + elm.getPostCount() + " posts");
+    console.log("elm info: " + elm.getInfo());
+  }
+}
+
+function pulse(...signals) {
+    for (signal of signals) {
+        sim.setExtVoltage(signal, HIGH);
+        pulsedSignals.push(signal);
+    }
+}
+
+function getBit(name) {
+    return isHigh(name) ? '1' : '0';
+}
+
+function isHigh(name) {
+    let volt = sim.getNodeVoltage(name);
+    return volt > THRESHOLD;
+}
+
+// called every timestep
+function didStep(sim) {
+    let clock = sim.getNodeVoltage("clk");
+
+  if (clock > prevClock) { // Rising Edge
+    for (signal of pulsedSignals) {
+        sim.setExtVoltage(signal, LOW);
+    }
+    pulsedSignals = [];
+
+    if (isHigh('z1')) {
+        spawnTicket();
+    }
+    if (isHigh('z2')) {
+        spawnCoin();
+    }
+  }
+
+  prevClock = clock;
+}
+
+// callback called when simulation is done initializing
+function simLoaded() {
+  // get simulator object
+  sim = iframe.contentWindow.CircuitJS1;
+
+  // set up callbacks on update and timestep
+  sim.onupdate = didUpdate;
+  sim.ontimestep = didStep;
+  sim.onanalyze = didAnalyze;
+}
+
+// set up callback
+iframe.contentWindow.oncircuitjsloaded = simLoaded;
+
+</script>
+
