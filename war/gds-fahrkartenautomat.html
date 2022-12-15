@@ -11,6 +11,9 @@
         h1 {
             text-align: center;
         }
+        button {
+            padding: 10%;
+        }
         .coin {
             display: flex;
             justify-content: center;
@@ -18,23 +21,28 @@
             text-align: center;
             font-size: 30px;
             font-weight: bold;
-            aspect-ratio: 1;
             border-color: black;
             border-style: solid;
             border-width: 1px;
             border-radius: 50%;
             background: #FF9;
-            width: 60px
+            width: 60px;
+            height: 60px;
         }
-        .coin span {
-            display: inline-block;
-            vertical-align: middle;
+        #inputbox .coin {
+            position: relative;
+            top: 0;
+            left: 0;
+            transition: 0.2s 0s all linear;
         }
-        button:hover {
+        #inputbox .coin.coin2 {
+            top: 37%;
+        }
+        button.coin:hover {
             background: #FFD;
         }
-        button:active {
-            background-color: #FF4;
+        button.coin:active {
+            background: #FF4;
         }
         td {
             vertical-align: top;
@@ -43,19 +51,27 @@
             position: absolute;
             overflow: hidden;
         }
+        #inputbox {
+            /* background-color: #FF9; */
+            top: 0;
+            right: 86%;
+            width: 120px;
+            height: 200px;
+            pointer-events: none;
+        }
         #coinbox {
             /* background-color: #FF9; */
             top: 68%;
             left: 12%;
-            width: 400px;
-            height: 400px;
+            width: 280px;
+            height: 280px;
         }
         #ticketbox {
             /* background-color: #FF9; */
             top: 88%;
             left: 40%;
             width: 200px;
-            height: 300px;
+            height: 200px;
         }
         .ejecting {
             position: absolute;
@@ -91,17 +107,64 @@
         .ticket {
             background-color: #FBB;
             border: 1px solid black;
-            font-size: 3px;
-            width: 40px;
-            height: 60px;
+            font-size: 15px;
+            rotate: 90deg;
+            width: 60px;
+            height: 30px;
             text-align: center;
-            line-height: 5px;
+            line-height: 30px;
             padding: 2px;
         }
         .ticket.ejecting {
             left: 30%;
             top:-60px;
         }
+        .container {
+            display:inline-block;
+            position: relative;
+        }
+        .block-center {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #statemarker {
+            position: absolute;
+            display:none;
+            width: 17%;
+            padding-top: 17%;
+            opacity: 0.3;
+            border-radius: 50%;
+            background-color: #0f04;
+            border: 2px solid #0d0;
+        }
+        #statemarker.state00 {
+            display: block;
+            top: 32.5%; left:9%;
+        }
+        #statemarker.state10 {
+            display: block;
+            top: 32.5%; left:41.3%;
+        }
+        #statemarker.state11 {
+            display: block;
+            top: 32.5%; left:74%;
+        }
+        #tran {
+            position: absolute;
+            width: 50px;
+            background: #0f04;
+            height: 27px;
+            border: 2px solid #0b0;
+        }
+        #tran.s00-00, #tran.s0-01 {  top: 62%; left: 0%;  }
+        #tran.s10-00, #tran.s0-01 {  top: 74.67%; left: 53.51%;  }
+        #tran.s11-00, #tran.s0-01 {  top: 60%; left: 91.25%;  }
+        #tran.s00-10 {  top: 41.67%; left: 29.18%;  }
+        #tran.s00-11 {  top: 91.33%; left: 46.93%;  }
+        #tran.s10-10 {  top: 41.67%; left: 62.79%;  }
+        #tran.s10-11 {  top: 62%; left: 29.02%;  }
+        #tran.s11-10 {  top: 12%; left: 45%;  }
+        #tran.s11-11 {  top: 0%; left: 45%;  }
     </style>
 </head>
 <body>
@@ -113,13 +176,13 @@
             <iframe id="circuitFrame" width=800 height=550 src="circuitjs.html?hideSidebar=true&hideInfoBox=true&whiteBackground=true&positiveColor=%2300dd00&selectColor=%230000ff&euroResistors=true&IECGates=true&startCircuit=gds-fahrkartenautomat.txt"></iframe>
         </td>
         <td style="text-align: center;">
-            <p><button class="coin" onclick="pulse('x1')">1€</button></p>
-            <p><button class="coin" onclick="pulse('x1', 'x2')">2€</button></p>
+            <p><button id="button1e" class="coin" onclick="insertCoin(1)">1€</button></p>
+            <p><button id="button2e" class="coin" onclick="insertCoin(2)">2€</button></p>
             <p><button onclick="sim.setSimRunning(true)">Start</button></p>
             <p><button onclick="sim.setSimRunning(false)">Stop</button></p>
         </td>
         <td>
-            <div style="display:inline-block; position: relative;">
+            <div class="container">
                 <img src="circuitjs1/img/gds-fahrkartenautomat.png">
                 <p class="price">Preis<br>3€</p>
                 <div class="info">
@@ -127,20 +190,72 @@
                     <p>Zustand: <span id="statebits"></span></p>
                     <p>Ausgang: <span id="outputbits"></span></p>
                 </div>
+                <div class="clipbox" id="inputbox"></div>
                 <div class="clipbox" id="ticketbox"></div>
                 <div class="clipbox" id="coinbox"></div>
             </div>
         </td>
     </tr>
-</table>
+    <tr>
+<td>
+    <div class="container">
+<div>
+    <img src="circuitjs1/img/gds-fahrkartenautomat-diagramm.png" style="height:300px" onclick="logPos(event)" >
+    <div id="statemarker"></div>
+    <div id="tran"></div>
+</div>
+</div>
+</td>
 
-<p>
+<td style="padding:20px;" colspan="2">
+<div style="max-width: 400px">
+    <p>
     This page is based on the <a href="http://www.falstad.com/circuit/">circuitjs simulator</a>
     by Paul Falstad, Iain Sharp and others.
-    Source Code: <a href="https://github.com/fritzw/circuitjs1">https://github.com/fritzw/circuitjs1</a>
-</p>
+    </p>
+
+    <p>
+    Visualization by Fritz Webering. Source code: <a href="https://github.com/fritzw/circuitjs1/tree/ims-as">https://github.com/fritzw/circuitjs1/tree/ims-as</a>
+    </p>
+</div>
+</td>
+</tr>
+</table>
 
 <script>
+
+function logPos(event) {
+    let x = event.offsetX;
+    let y = event.offsetY;
+    let w = event.target.getBoundingClientRect().width;
+    let h = event.target.getBoundingClientRect().height;
+    let xPercent = Math.round(x / w * 10000) / 100;
+    let yPercent = Math.round(y / h * 10000) / 100;
+    console.log("top: " + yPercent + "%; left: " + xPercent + "%;");
+}
+
+function insertCoin(value) {
+    if (isHigh('x1')) {
+        return;
+    }
+
+    let div = document.createElement("div");
+    div.className = "coin coin" + value;
+    div.innerHTML = value + "€";
+    let container = document.getElementById("inputbox");
+    container.appendChild(div);
+    
+    setTimeout(() => div.style.left = '102%', 10);
+    if (value == 1) {
+        pulse('x1');
+        setTimeout(() => div.style.top = '45%', 10);
+    }
+    else {
+        pulse('x1', 'x2');
+        setTimeout(() => div.style.top = '30%', 10);
+    }
+    setTimeout(() => container.removeChild(div), 300);
+}
 
 function spawnCoin() {
     let div = document.createElement("div");
@@ -153,14 +268,14 @@ function spawnCoin() {
     let rndY = Math.round(Math.random() * 10);
     setTimeout(() => div.style.left = '0px', 100);
     setTimeout(() => div.classList.add("falling"), 400);
-    setTimeout(() => div.style.top = (rndY+180) + 'px', 400);
+    setTimeout(() => div.style.top = (rndY+160) + 'px', 400);
     setTimeout(() => div.style.left = rndX+'px', 400);
 }
 
 function spawnTicket() {
     let div = document.createElement("div");
     div.className = "ticket ejecting";
-    let text = document.createTextNode("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor");
+    let text = document.createTextNode("Ticket");
     div.appendChild(text);
     let container = document.getElementById("ticketbox");
     container.appendChild(div);
@@ -198,6 +313,8 @@ function didUpdate(sim) {
     document.getElementById('inputbits').innerHTML = inputs;
     document.getElementById('statebits').innerHTML = state;
     document.getElementById('outputbits').innerHTML = outputs;
+    document.getElementById('statemarker').className = 'state'+state;
+    document.getElementById('tran').className = 's'+state+'-'+inputs;
 }
 
 // called when simulator analyzes a circuit (when a circuit is loaded or edited)
